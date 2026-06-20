@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DS Dashboard Compatibility Checker</title>
+<link rel="stylesheet" href="/assets/pages-theme.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{font-family:'Inter',system-ui,sans-serif}
+.fade-in{animation:fadeIn .4s ease-out}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.ring-wrap{position:relative;display:flex;align-items:center;justify-content:center}
+.ring-wrap canvas{position:absolute;top:0;left:0}
+.tab-pill{padding:4px 10px;border-radius:9999px;font-size:.65rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--foreground);transition:all .15s;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
+.tab-pill.active{background:var(--primary);color:var(--primary-foreground);border-color:transparent}
+.tab-pill:hover:not(.active){background:var(--muted)}
+details summary{cursor:pointer;list-style:none}details summary::-webkit-details-marker{display:none}
+.exp{transition:transform .2s;display:inline-block}details[open] .exp{transform:rotate(90deg)}
+.sql-box{max-height:80px;overflow-y:auto;font-family:'SF Mono',Menlo,monospace;font-size:.65rem;line-height:1.5;white-space:pre-wrap;word-break:break-all;background:var(--muted);padding:8px 10px;border-radius:8px;margin-top:6px}
+.stat-card{border-radius:12px;padding:16px 20px;display:flex;flex-direction:column;gap:2px}
+.stat-label{font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.7}
+.stat-val{font-size:1.75rem;font-weight:700;line-height:1.2}
+.hero-banner{border-radius:16px;padding:24px 28px;position:relative;overflow:hidden}
+.hero-banner::before{content:'';position:absolute;top:0;right:0;width:200px;height:200px;border-radius:50%;opacity:.08;transform:translate(40%,-40%)}
+.hero-banner.pass{background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(34,197,94,.02))}.hero-banner.pass::before{background:#22c55e}
+.hero-banner.warn{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(245,158,11,.02))}.hero-banner.warn::before{background:#f59e0b}
+.hero-banner.fail{background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(239,68,68,.02))}.hero-banner.fail::before{background:#ef4444}
+.badge-pass{background:#22c55e15;color:#16a34a;border:1px solid #22c55e40;font-weight:600;padding:6px 14px;border-radius:20px;font-size:.8rem}
+.badge-warn{background:#f59e0b15;color:#d97706;border:1px solid #f59e0b40;font-weight:600;padding:6px 14px;border-radius:20px;font-size:.8rem}
+.badge-fail{background:#ef444415;color:#dc2626;border:1px solid #ef444440;font-weight:600;padding:6px 14px;border-radius:20px;font-size:.8rem}
+.tbl-row:nth-child(even){background:rgba(128,128,128,.03)}
+.rec-blocker{background:#ef44440a;border:1px solid #ef444425;border-radius:12px;padding:16px 20px}
+.rec-action{background:#f59e0b0a;border:1px solid #f59e0b25;border-radius:12px;padding:16px 20px}
+.xfer-card{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.xfer-card:last-child{border-bottom:none}
+.xfer-card input[type=checkbox]{margin-top:3px;flex-shrink:0}
+.xfer-card.disabled{opacity:.45}
+.xfer-card .card-name{font-size:.85rem;font-weight:500}
+.xfer-card .card-reason{font-size:.7rem;color:#dc2626;margin-top:2px}
+.tab-header{display:flex;align-items:center;gap:8px;padding:8px 0;margin-top:8px;border-bottom:2px solid var(--border)}
+.tab-header input[type=checkbox]{flex-shrink:0}
+.tab-header .tab-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+</style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+<div class="max-w-5xl mx-auto px-4 py-8 space-y-5">
+
+<div class="flex items-center gap-3 mb-2">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" fill="currentColor" width="26" height="26" class="text-primary"><path d="M14.5818 0C14.9085 0 15.2791.041 15.2791.041 14.1828 1.35 13.5222 2.97 13.3886 4.67 11.323 5.01 9.42 6 7.96 7.5 6.5 8.99 5.55 10.91 5.26 12.98 3.37 13.18 1.24 14.04.009 15.27-.282 6.84 6.21 0 14.58 0ZM16.68 25.34c-.39.06-.78.08-1.17.08-.67-.01-1.35-.06-2.01-.17-.52 1.25-1.21 2.42-2.04 3.49-2.62-.58-5.03-1.86-6.96-3.71C2.57 23.19 1.18 20.84.5 18.26c1.32-1.56 4.36-2.46 6.24-2.46 4.03 0 6.16 2.13 6.9 5.44-2.42-.65-3.86-2-4.81-4.01-.55-.2-1.14-.3-1.72-.29-.53 0-1.06.08-1.56.25 1.07 4.05 5.01 7.08 9.82 7.08 4.44 0 6.33-2.25 6.33-2.25v-3.44s-2.18 2.25-4.89 2.7c-.3-2.1-1.28-4.05-2.8-5.55-1.51-1.5-3.47-2.47-5.58-2.76.7-3.44 3.33-5.36 6.9-5.36s5.45 2.58 5.45 2.58V6.8s-1.85-1.72-5.13-2.09c.08-1.51 1.07-3.4 2.14-4.09 4.48 1.39 8.79 5.16 10.02 10.64 0 0-1.97 1.97-5.67 1.97-3.04 0-4.96-1.52-5.88-4.17-.57-.2-1.17-.3-1.77-.29-.56-.01-1.12.09-1.64.29 1.19 4.26 4.96 7.12 9.16 7.12 4.11 0 6.33-1.88 6.33-1.88 0 8.51-6.53 14.61-14.3 14.78.9-.87 1.6-2.79 1.8-3.73Z"/></svg>
+  <div><h1 class="text-xl font-bold tracking-tight">Dashboard Compatibility Checker</h1>
+  <p class="text-muted-foreground text-sm">Proof-of-Value dashboard transfer assessment</p></div>
+</div>
+<div id="sandboxWarn" class="rounded-xl bg-info/10 text-info ring-1 ring-foreground/10 p-4" style="display:none">
+  <h3 class="text-sm font-semibold">Open in a new tab to use</h3><p class="text-sm opacity-90">Click the expand button to open in standalone mode.</p>
+</div>
+
+<!-- FORM -->
+<div class="rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10 flex flex-col gap-4 py-5">
+<div class="px-5"><h2 class="text-base font-semibold">Configuration</h2></div>
+<div class="px-5 grid sm:grid-cols-3 gap-4">
+  <div class="space-y-1.5"><label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dashboard ID</label>
+    <input type="number" id="inpId" placeholder="e.g. 2344" class="h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm text-foreground outline-none focus:ring-2"/></div>
+  <div class="space-y-1.5"><label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer's DS API Key</label>
+    <input type="password" id="inpKey" placeholder="From data.chainalysis.com" class="h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm text-foreground outline-none focus:ring-2"/></div>
+  <div class="space-y-1.5"><label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer Label</label>
+    <input type="text" id="inpLabel" placeholder="e.g. Citi" class="h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm text-foreground outline-none focus:ring-2"/></div>
+</div>
+<div class="px-5"><button id="goBtn" onclick="go()" class="inline-flex items-center justify-center rounded-lg h-9 gap-2 px-5 text-sm font-semibold bg-primary text-primary-foreground transition-all disabled:opacity-50 hover:opacity-90">
+  <span id="goTxt">Analyze Compatibility</span><span id="goSpin" style="display:none" class="animate-spin">&#x27F3;</span>
+</button></div>
+</div>
+<div id="errBox" class="alert alert-destructive fade-in" role="alert" style="display:none"><div class="alert-title">Error</div><div class="alert-description" id="errMsg"></div></div>
+
+<!-- ═══ RESULTS ═══ -->
+<div id="res" style="display:none" class="space-y-5 fade-in">
+<div id="hero" class="hero-banner pass ring-1 ring-foreground/10"><div class="flex items-start justify-between">
+  <div><p class="stat-label text-muted-foreground mb-1.5">Compatibility Report</p><h2 class="text-lg font-bold" id="hName"></h2><p class="text-sm text-muted-foreground mt-0.5" id="hRoute"></p></div>
+  <span id="hBadge" class="badge-pass"></span></div></div>
+
+<div class="grid md:grid-cols-5 gap-4">
+  <div class="md:col-span-2 rounded-xl bg-card ring-1 ring-foreground/10 p-5 flex items-center justify-center">
+    <div class="ring-wrap" style="width:150px;height:150px"><canvas id="ringC" width="150" height="150"></canvas>
+      <div class="text-center" style="z-index:1"><div class="text-3xl font-bold" id="ringP"></div><div class="text-xs text-muted-foreground font-medium mt-0.5">compatible</div></div></div></div>
+  <div class="md:col-span-3 grid grid-cols-2 gap-3">
+    <div class="stat-card bg-card ring-1 ring-foreground/10"><span class="stat-label text-muted-foreground">SQL Cards</span><span class="stat-val" id="sT">0</span></div>
+    <div class="stat-card bg-card ring-1 ring-foreground/10"><span class="stat-label text-muted-foreground">Text / Header</span><span class="stat-val text-muted-foreground" id="sTx">0</span></div>
+    <div class="stat-card" style="background:#22c55e0a;border:1px solid #22c55e25;border-radius:12px"><span class="stat-label" style="color:#16a34a">Compatible</span><span class="stat-val" style="color:#16a34a" id="sOk">0</span></div>
+    <div class="stat-card" style="background:#ef44440a;border:1px solid #ef444425;border-radius:12px"><span class="stat-label" style="color:#dc2626">Incompatible</span><span class="stat-val" style="color:#dc2626" id="sFl">0</span></div>
+  </div>
+</div>
+
+<div id="tcSec" style="display:none" class="rounded-xl bg-card ring-1 ring-foreground/10 py-5">
+  <div class="px-5"><h2 class="text-sm font-semibold">Compatibility by Tab</h2></div>
+  <div class="px-5 mt-2" style="height:220px"><canvas id="tcC"></canvas></div></div>
+
+<div id="recSec" style="display:none" class="space-y-3"></div>
+
+<!-- TRANSFER PLAN — interactive card selection -->
+<div id="xferSec" style="display:none" class="rounded-xl bg-card ring-1 ring-foreground/10 py-5">
+  <div class="px-5 flex items-center justify-between flex-wrap gap-3">
+    <div><h2 class="text-sm font-semibold">Transfer Plan</h2>
+      <p class="text-xs text-muted-foreground mt-0.5">Select cards and tabs to include. Incompatible cards are disabled.</p></div>
+    <div class="text-xs text-muted-foreground"><span id="xferCount" style="font-weight:700;color:var(--foreground)">0</span> cards selected</div>
+  </div>
+  <div class="px-5 mt-3" id="xferList"></div>
+  <div class="px-5 mt-4" style="border-top:1px solid var(--border);padding-top:16px">
+    <button onclick="showCopyModal()" class="inline-flex items-center justify-center rounded-lg h-9 gap-2 px-5 text-sm font-semibold bg-primary text-primary-foreground transition-all disabled:opacity-50 hover:opacity-90" id="xferBtn" disabled>
+      Transfer Selected Cards</button>
+  </div>
+</div>
+
+<!-- COPY MODAL -->
+<div id="copyModal" style="display:none" class="rounded-xl bg-card ring-1 ring-foreground/10 py-5 fade-in">
+  <div class="px-5 flex items-center justify-between"><h2 class="text-sm font-semibold">Transfer Dashboard</h2>
+    <button onclick="document.getElementById('copyModal').style.display='none'" class="text-muted-foreground hover:text-foreground text-lg leading-none">&times;</button></div>
+  <div class="px-5 mt-3 space-y-4">
+    <div class="space-y-1.5"><label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">New Folder Name</label>
+      <input type="text" id="folderName" placeholder="e.g. CPS — PoV Dashboards" class="h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm text-foreground outline-none focus:ring-2"/></div>
+    <div class="space-y-1.5"><label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dashboard Name</label>
+      <input type="text" id="dashName" class="h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm text-foreground outline-none focus:ring-2"/></div>
+    <div class="text-xs text-muted-foreground" id="copySummary"></div>
+    <button id="doCopyBtn" onclick="doCopy()" class="inline-flex items-center justify-center rounded-lg h-9 gap-2 px-5 text-sm font-semibold bg-primary text-primary-foreground transition-all disabled:opacity-50 hover:opacity-90">
+      <span id="copyTxt">Confirm &amp; Transfer</span><span id="copySpin" style="display:none" class="animate-spin">&#x27F3;</span></button>
+    <div id="copyResult" style="display:none"></div>
+  </div>
+</div>
+
+<!-- CARD DETAIL -->
+<div class="rounded-xl bg-card ring-1 ring-foreground/10 py-6">
+  <div class="px-6"><h2 class="text-sm font-semibold">Card-by-Card Detail</h2>
+    <div class="flex gap-2 flex-wrap mt-4" id="tF"></div></div>
+  <div class="px-6 overflow-x-auto mt-4" id="cT"></div>
+</div>
+</div>
+</div>
+<script src="/assets/chart.min.js"></script>
+<script>
+var SLUG="ds-dashboard-compatibility-checker",D=null,aT='all',rI=null,tI=null;
+var COK='#22c55e',CFAIL='#ef4444';
+
+async function go(){
+  var id=parseInt(document.getElementById('inpId').value);
+  var key=document.getElementById('inpKey').value;
+  var label=document.getElementById('inpLabel').value||'Customer';
+  if(!id){sErr('Enter a Dashboard ID.');return}
+  if(!key){sErr('Enter the customer\u2019s DS API key.');return}
+  setL(true);hErr();D=null;document.getElementById('res').style.display='none';
+  document.getElementById('sandboxWarn').style.display='none';
+  try{
+    var r=await fetch('/api/workflow/'+SLUG+'/invoke/sync',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({input:{dashboard_id:id,customer_api_key:key,customer_label:label}})});
+    if(!r.ok){var t=await r.text();throw new Error(r.status+': '+t)}
+    var data=await r.json();D=data.output||data;
+    if(!D||!D.report)throw new Error('Unexpected response format');
+    render()
+  }catch(e){
+    if(e instanceof TypeError){document.getElementById('sandboxWarn').style.display='';
+      sErr('Cannot run in preview. Open in a standalone tab.')}
+    else sErr(e.message)
+  }finally{setL(false)}
+}
+
+function render(){
+  var r=D.report,st=getComputedStyle(document.documentElement);
+  var mu=st.getPropertyValue('--muted-foreground').trim()||'#94a3b8';
+  var bd=st.getPropertyValue('--border').trim()||'#e2e8f0';
+  Chart.defaults.color=mu;Chart.defaults.borderColor=bd;
+  Chart.defaults.font.family='Inter,system-ui,sans-serif';Chart.defaults.font.size=11;
+  document.getElementById('res').style.display='';
+
+  // Hero
+  var h=document.getElementById('hero');
+  h.className='hero-banner ring-1 ring-foreground/10 '+(r.transferable?'pass':r.compatibility_pct>=50?'warn':'fail');
+  document.getElementById('hName').textContent=r.dashboard_name;
+  document.getElementById('hRoute').textContent=r.source_team+' \u2192 '+r.target_team;
+  var hb=document.getElementById('hBadge');
+  if(r.transferable){hb.textContent='\u2705 Ready to Transfer';hb.className='badge-pass'}
+  else if(r.compatibility_pct>0){hb.textContent='\u26A0\uFE0F Partial';hb.className='badge-warn'}
+  else{hb.textContent='\u26D4 Not Transferable';hb.className='badge-fail'}
+
+  var sq=r.total_cards-r.text_cards;
+  document.getElementById('sT').textContent=sq;
+  document.getElementById('sTx').textContent=r.text_cards;
+  document.getElementById('sOk').textContent=r.compatible_cards;
+  document.getElementById('sFl').textContent=r.incompatible_cards;
+  document.getElementById('ringP').textContent=r.compatibility_pct+'%';
+
+  if(rI)rI.destroy();
+  rI=new Chart(document.getElementById('ringC'),{type:'doughnut',
+    data:{labels:['Compatible','Incompatible'],datasets:[{data:[r.compatible_cards,Math.max(r.incompatible_cards,0)],
+      backgroundColor:[COK,r.incompatible_cards>0?CFAIL:'#e2e8f020'],borderWidth:0}]},
+    options:{cutout:'82%',responsive:false,animation:{animateRotate:true,duration:800},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e293b',padding:10,cornerRadius:8,
+        callbacks:{label:function(ctx){return ' '+ctx.label+': '+ctx.parsed+' cards'}}}}}});
+
+  // Tab chart
+  var tm={};r.cards.forEach(function(c){if(c.card_type==='text')return;var t=c.tab_name||'Default';
+    if(!tm[t])tm[t]={ok:0,fl:0};c.compatible?tm[t].ok++:tm[t].fl++});
+  var tn=Object.keys(tm);
+  if(tn.length>1){
+    document.getElementById('tcSec').style.display='';if(tI)tI.destroy();
+    tI=new Chart(document.getElementById('tcC'),{type:'bar',
+      data:{labels:tn,datasets:[
+        {label:'Compatible',data:tn.map(function(t){return tm[t].ok}),backgroundColor:COK+'B3',borderRadius:6,borderSkipped:false},
+        {label:'Incompatible',data:tn.map(function(t){return tm[t].fl}),backgroundColor:CFAIL+'B3',borderRadius:6,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10,weight:'500'},maxRotation:45}},
+          y:{stacked:true,beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:bd+'40'}}},
+        plugins:{legend:{position:'top',labels:{boxWidth:10,padding:16,font:{size:11,weight:'500'},usePointStyle:true,pointStyle:'rectRounded'}},
+          tooltip:{backgroundColor:'#1e293b',padding:10,cornerRadius:8}}}});
+  }else document.getElementById('tcSec').style.display='none';
+
+  // Recommendations
+  var recs=D.recommendations||[];var recEl=document.getElementById('recSec');
+  if(recs.length){
+    recEl.style.display='';
+    recEl.innerHTML='<h2 class="text-sm font-semibold">Recommendations</h2>'+recs.map(function(rc){
+      if(rc.type==='internal_only')return '<div class="rec-blocker"><div class="flex items-start gap-3"><span style="font-size:1.1rem">\u26D4</span><div><div class="text-sm font-semibold" style="color:#dc2626">Internal-Only Dashboard</div><div class="text-sm text-muted-foreground mt-1">'+esc(rc.message)+'</div></div></div></div>';
+      if(rc.type==='package_needed')return '<div class="rec-action"><div class="flex items-start gap-3"><span style="font-size:1.1rem">\u{1F4E6}</span><div><div class="text-sm font-semibold" style="color:#d97706">Enable '+esc(rc.package_label)+'</div><div class="text-sm text-muted-foreground mt-1">'+esc(rc.message)+'</div><div class="text-xs text-muted-foreground mt-1">Requires: '+rc.tables.map(function(t){return '<code style="background:#f59e0b10;color:#d97706;padding:1px 5px;border-radius:4px;font-size:.68rem">'+esc(t)+'</code>'}).join(' ')+'</div></div></div></div>';
+      return ''}).join('')
+  }else recEl.style.display='none';
+
+  // Transfer plan — interactive card list grouped by tab
+  var xferEl=document.getElementById('xferSec');
+  xferEl.style.display='';
+  var sqlCards=r.cards.filter(function(c){return c.card_type==='question'});
+  var byTab={};sqlCards.forEach(function(c){var t=c.tab_name||'Default';if(!byTab[t])byTab[t]=[];byTab[t].push(c)});
+  var xh='';
+  Object.keys(byTab).forEach(function(tab){
+    var cards=byTab[tab];var allOk=cards.every(function(c){return c.compatible});
+    var someOk=cards.some(function(c){return c.compatible});
+    xh+='<div class="tab-header"><input type="checkbox" '+(someOk?'checked':'')+' '+(allOk?'':'')+'onchange="toggleTab(this,\''+tab.replace(/'/g,"\\'")+'\')" data-tab="'+esc(tab)+'"/><span class="tab-label">'+esc(tab)+'</span><span class="text-xs text-muted-foreground" style="margin-left:auto">'+cards.filter(function(c){return c.compatible}).length+'/'+cards.length+' compatible</span></div>';
+    cards.forEach(function(c){
+      var dis=!c.compatible;
+      xh+='<div class="xfer-card'+(dis?' disabled':'')+'"><input type="checkbox" class="xfer-cb" data-id="'+c.card_id+'" data-tab="'+esc(tab)+'" '+(c.compatible?'checked':'')+' '+(dis?'disabled':'')+' onchange="updateCount()"/><div><div class="card-name">'+esc(c.card_name)+(c.display_type?' <span style="font-size:.6rem;color:var(--muted-foreground);border:1px solid var(--border);border-radius:4px;padding:1px 5px">'+c.display_type+'</span>':'')+'</div>'+(dis?'<div class="card-reason">'+(c.database_issue||c.internal_schemas&&c.internal_schemas.length?'Internal database \u2014 cannot transfer':'Missing datasets: '+(c.missing_tables||[]).map(function(m){return m.full_ref}).join(', '))+'</div>':'')+'</div></div>'
+    })
+  });
+  document.getElementById('xferList').innerHTML=xh;
+  updateCount();
+
+  // Copy modal reset
+  document.getElementById('copyModal').style.display='none';
+  document.getElementById('copyResult').style.display='none';
+  document.getElementById('dashName').value=r.dashboard_name;
+  document.getElementById('folderName').value=(document.getElementById('inpLabel').value||'Customer')+' \u2014 PoV Dashboards';
+
+  // Card detail
+  aT='all';
+  document.getElementById('tF').innerHTML='<div class="tab-pill active" onclick="fTab(\'all\',this)">All</div>'+tn.map(function(t){return '<div class="tab-pill" onclick="fTab(\''+t.replace(/'/g,"\\'")+'\',this)">'+esc(t)+'</div>'}).join('');
+  rCards(r.cards)
+}
+
+function toggleTab(el,tab){
+  var checked=el.checked;
+  document.querySelectorAll('.xfer-cb[data-tab="'+tab+'"]').forEach(function(cb){
+    if(!cb.disabled)cb.checked=checked});
+  updateCount()
+}
+function updateCount(){
+  var n=document.querySelectorAll('.xfer-cb:checked').length;
+  document.getElementById('xferCount').textContent=n;
+  document.getElementById('xferBtn').disabled=n===0
+}
+
+function showCopyModal(){
+  var sel=[];document.querySelectorAll('.xfer-cb:checked').forEach(function(cb){sel.push(parseInt(cb.dataset.id))});
+  if(!sel.length){sErr('Select at least one card to transfer.');return}
+  document.getElementById('copyModal').style.display='';
+  document.getElementById('copyResult').style.display='none';
+  document.getElementById('copySummary').textContent=sel.length+' cards will be transferred to a new folder in the customer\u2019s environment.'
+}
+
+async function doCopy(){
+  var folder=document.getElementById('folderName').value;
+  var dashN=document.getElementById('dashName').value;
+  if(!folder){sErr('Enter a folder name.');return}
+  if(!dashN){sErr('Enter a dashboard name.');return}
+  var sel=[];document.querySelectorAll('.xfer-cb:checked').forEach(function(cb){sel.push(parseInt(cb.dataset.id))});
+  document.getElementById('doCopyBtn').disabled=true;
+  document.getElementById('copyTxt').textContent='Transferring...';
+  document.getElementById('copySpin').style.display='inline';
+  document.getElementById('copyResult').style.display='none';hErr();
+  try{
+    var r=await fetch('/api/workflow/'+SLUG+'/invoke/sync',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({input:{
+        action:'copy',dashboard_id:parseInt(document.getElementById('inpId').value),
+        customer_api_key:document.getElementById('inpKey').value,
+        customer_label:document.getElementById('inpLabel').value||'Customer',
+        folder_name:folder,dashboard_name:dashN,include_card_ids:sel}})});
+    if(!r.ok){var t=await r.text();throw new Error(r.status+': '+t)}
+    var data=await r.json();var out=data.output||data;
+    if(out.copy_result){
+      var cr=out.copy_result;
+      document.getElementById('copyResult').style.display='';
+      document.getElementById('copyResult').innerHTML=
+        '<div style="background:#22c55e0a;border:1px solid #22c55e25;border-radius:12px;padding:16px 20px;margin-top:12px">'+
+        '<div class="text-sm font-semibold" style="color:#16a34a">\u2705 Dashboard Transferred</div>'+
+        '<div class="text-sm mt-2"><strong>'+esc(cr.dashboard_name||dashN)+'</strong></div>'+
+        (cr.folder_name?'<div class="text-xs text-muted-foreground mt-1">Folder: '+esc(cr.folder_name)+'</div>':'')+
+        '<div class="text-xs text-muted-foreground mt-1">'+cr.cards_created+' cards \u00B7 '+cr.text_cards_copied+' text cards \u00B7 '+cr.cards_skipped+' excluded</div>'+
+        '<a href="'+esc(cr.dashboard_url)+'" target="_blank" class="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold" style="color:#16a34a">\u2197 Open Dashboard in Data Solutions</a></div>'
+    }else throw new Error('No copy result')
+  }catch(e){sErr(e.message)}
+  finally{document.getElementById('doCopyBtn').disabled=false;document.getElementById('copyTxt').textContent='Confirm & Transfer';document.getElementById('copySpin').style.display='none'}
+}
+
+function rCards(cards){
+  var f=aT==='all'?cards:cards.filter(function(c){return(c.tab_name||'Default')===aT});
+  var s=f.filter(function(c){return c.card_type!=='text'});
+  document.getElementById('cT').innerHTML='<table class="w-full text-sm" style="border-collapse:separate;border-spacing:0"><thead><tr style="border-bottom:2px solid var(--border)">'+
+    '<th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground" style="width:36px"></th>'+
+    '<th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Card</th>'+
+    '<th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground" style="min-width:120px;white-space:nowrap">Tab</th>'+
+    '<th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tables</th></tr></thead><tbody>'+
+    s.map(function(c){
+      var icon=c.compatible?'<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#22c55e20;align-items:center;justify-content:center;font-size:.7rem">\u2713</span>':
+        '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#ef444420;align-items:center;justify-content:center;font-size:.7rem">\u2715</span>';
+      var issues='';
+      if(c.database_issue)issues+='<div class="text-xs mt-1"><span style="color:#dc2626;font-weight:600">\u26D4 Database:</span> <span style="color:#dc2626">'+esc(c.database_issue)+'</span></div>';
+      if(c.internal_schemas&&c.internal_schemas.length)issues+='<div class="text-xs mt-1"><span style="color:#dc2626;font-weight:600">\u26D4 Internal:</span> '+c.internal_schemas.map(function(s){return '<code style="background:#ef444410;color:#dc2626;padding:1px 5px;border-radius:4px;font-size:.68rem">'+esc(s)+'</code>'}).join(' ')+'</div>';
+      if((c.missing_tables||[]).length)issues+='<div class="text-xs mt-1"><span style="color:#dc2626;font-weight:600">Missing:</span> '+c.missing_tables.map(function(m){return '<code style="background:#ef444410;color:#dc2626;padding:1px 5px;border-radius:4px;font-size:.68rem">'+esc(m.full_ref)+'</code>'}).join(' ')+'</div>';
+      return '<tr class="tbl-row" style="border-bottom:1px solid var(--border)"><td class="px-4 py-3.5">'+icon+'</td>'+
+        '<td class="px-4 py-3.5"><details><summary class="flex items-center gap-2" style="justify-content:space-between"><div class="flex items-center gap-1.5" style="min-width:0"><span class="exp text-muted-foreground" style="font-size:.6rem;flex-shrink:0">\u25B6</span><span class="text-sm font-medium">'+esc(c.card_name)+'</span></div>'+(c.display_type?'<span style="font-size:.6rem;color:var(--muted-foreground);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-weight:500;white-space:nowrap;flex-shrink:0;margin-left:8px">'+c.display_type+'</span>':'')+'</summary><div class="mt-2 space-y-1">'+(c.sql?'<div class="sql-box">'+esc(c.sql)+'</div>':'')+issues+'</div></details></td>'+
+        '<td class="px-4 py-3.5 text-xs text-muted-foreground" style="white-space:nowrap">'+esc(c.tab_name||'Default')+'</td>'+
+        '<td class="px-4 py-3.5 text-xs">'+(c.tables_referenced||[]).map(function(t){var bg=c.compatible?'background:#22c55e10;color:#16a34a':'background:var(--muted);color:var(--foreground)';return '<code style="'+bg+';padding:1px 5px;border-radius:4px;font-size:.65rem;font-weight:500;display:inline-block;margin:1px 2px">'+esc(t.full_ref)+'</code>'}).join('')+'</td></tr>'}).join('')+'</tbody></table>'
+}
+
+function fTab(t,el){aT=t;document.querySelectorAll('.tab-pill').forEach(function(p){p.classList.remove('active')});el.classList.add('active');rCards(D.report.cards)}
+function setL(on){document.getElementById('goBtn').disabled=on;document.getElementById('goTxt').textContent=on?'Analyzing...':'Analyze Compatibility';document.getElementById('goSpin').style.display=on?'inline':'none'}
+function sErr(m){document.getElementById('errMsg').textContent=m;document.getElementById('errBox').style.display=''}
+function hErr(){document.getElementById('errBox').style.display='none'}
+function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
+
+</script>
+</body>
+</html>
